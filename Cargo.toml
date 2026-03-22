@@ -1,0 +1,27 @@
+[package]
+name = "xposedornot"
+version = "1.0.0"
+edition = "2021"
+rust-version = "1.70"
+description = "Rust client library for the XposedOrNot data breach API"
+license = "MIT"
+authors = ["XposedOrNot <deva@xposedornot.com>"]
+repository = "https://github.com/XposedOrNot/XposedOrNot-Rust"
+homepage = "https://xposedornot.com"
+documentation = "https://docs.rs/xposedornot"
+keywords = ["xposedornot", "security", "breach", "data-breach", "api"]
+categories = ["api-bindings", "authentication"]
+exclude = ["tests/"]
+
+[dependencies]
+reqwest = { version = "0.11", default-features = false, features = ["json", "rustls-tls"] }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+thiserror = "1"
+tokio = { version = "1", features = ["sync", "time"] }
+sha3 = "0.10"
+percent-encoding = "2"
+
+[dev-dependencies]
+tokio = { version = "1", features = ["full"] }
+wiremock = "0.5"
