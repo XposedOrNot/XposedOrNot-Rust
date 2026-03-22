@@ -43,8 +43,22 @@ impl Client {
             "{}/v1/pass/anon/{}",
             self.config.password_base_url, hash_prefix
         );
-        let response = self.get_with_retry(&url).await?;
-        let body: PasswordCheckResponse = response.json().await?;
-        Ok(body)
+        match self.get_with_retry(&url).await {
+            Ok(response) => {
+                let body: PasswordCheckResponse = response.json().await?;
+                Ok(body)
+            }
+            Err(Error::NotFound { .. }) => {
+                // 404 means password hash prefix not found — password is not exposed
+                Ok(PasswordCheckResponse {
+                    search_pass_anon: crate::models::PasswordSearchAnon {
+                        anon: hash_prefix,
+                        char: String::new(),
+                        count: "0".to_string(),
+                    },
+                })
+            }
+            Err(e) => Err(e),
+        }
     }
 }

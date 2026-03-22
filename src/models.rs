@@ -1,6 +1,16 @@
 //! Request and response types for the XposedOrNot API.
 
-use serde::{Deserialize, Serialize};
+use serde::{Deserialize, Deserializer, Serialize};
+
+/// Deserializes `null` JSON values as an empty Vec.
+fn deserialize_null_as_empty_vec<'de, D, T>(deserializer: D) -> std::result::Result<Vec<T>, D::Error>
+where
+    D: Deserializer<'de>,
+    T: Deserialize<'de>,
+{
+    let opt: Option<Vec<T>> = Option::deserialize(deserializer)?;
+    Ok(opt.unwrap_or_default())
+}
 
 // ---------------------------------------------------------------------------
 // Email check responses
@@ -12,6 +22,7 @@ use serde::{Deserialize, Serialize};
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct FreeEmailCheckResponse {
     /// Nested list of breach names associated with the email.
+    #[serde(default)]
     pub breaches: Vec<Vec<String>>,
 }
 
@@ -75,8 +86,8 @@ pub struct BreachRecord {
     pub domain: String,
     /// Industry category.
     pub industry: String,
-    /// Types of data exposed.
-    pub exposed_data: String,
+    /// Types of data exposed (array of strings from the API).
+    pub exposed_data: Vec<String>,
     /// Number of records exposed.
     pub exposed_records: u64,
     /// Whether the breach has been verified.
@@ -110,6 +121,7 @@ pub struct BreachAnalyticsDetail {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ExposedBreaches {
     /// List of breach detail objects.
+    #[serde(default)]
     pub breaches_details: Vec<serde_json::Value>,
 }
 
@@ -152,8 +164,8 @@ pub struct BreachAnalyticsResponse {
     /// Pastes summary.
     #[serde(rename = "PastesSummary")]
     pub pastes_summary: PastesSummary,
-    /// List of exposed pastes.
-    #[serde(rename = "ExposedPastes")]
+    /// List of exposed pastes (null from API when no pastes found).
+    #[serde(rename = "ExposedPastes", default, deserialize_with = "deserialize_null_as_empty_vec")]
     pub exposed_pastes: Vec<serde_json::Value>,
 }
 

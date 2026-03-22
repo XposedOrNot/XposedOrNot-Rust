@@ -3,7 +3,7 @@
 use percent_encoding::utf8_percent_encode;
 
 use crate::client::Client;
-use crate::errors::Result;
+use crate::errors::{Error, Result};
 use crate::models::{
     BreachAnalyticsResponse, EmailCheckResult, FreeEmailCheckResponse, PlusEmailCheckResponse,
 };
@@ -51,9 +51,19 @@ impl Client {
             Ok(EmailCheckResult::Plus(body))
         } else {
             let url = format!("{}/v1/check-email/{}", self.config.base_url, encoded_email);
-            let response = self.get_with_retry(&url).await?;
-            let body: FreeEmailCheckResponse = response.json().await?;
-            Ok(EmailCheckResult::Free(body))
+            match self.get_with_retry(&url).await {
+                Ok(response) => {
+                    let body: FreeEmailCheckResponse = response.json().await?;
+                    Ok(EmailCheckResult::Free(body))
+                }
+                Err(Error::NotFound { .. }) => {
+                    // 404 means email not found in any breaches — valid result
+                    Ok(EmailCheckResult::Free(FreeEmailCheckResponse {
+                        breaches: vec![],
+                    }))
+                }
+                Err(e) => Err(e),
+            }
         }
     }
 
